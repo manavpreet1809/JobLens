@@ -1,0 +1,19 @@
+# Charcoal surfaces, forest-green controls, and warm neutral chart accents.
+# Appearance only. Keep credentials in environment variables or secrets.toml.
+[theme]
+base = "dark"
+primaryColor = "#2F7D52"
+backgroundColor = "#101714"
+secondaryBackgroundColor = "#1C2721"
+textColor = "#EEF2EC"
+linkColor = "#8BC9A0"
+font = "sans serif"
+borderColor = "#465B4D"
+baseRadius = "small"
+showWidgetBorder = true
+showSidebarBorder = true
+chartCategoricalColors = ["#80BC92", "#D1AD66", "#85A9B8", "#C98764", "#BAC5B5", "#A4AC6B"]
+
+[theme.sidebar]
+backgroundColor = "#151E19"
+secondaryBackgroundColor = "#24332A"
