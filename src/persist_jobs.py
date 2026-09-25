@@ -9,14 +9,19 @@ from src.process_jobs import JOB_COLUMNS, SKILL_COLUMNS
 
 INSERT_JOBS = text("""
     INSERT INTO jobs
-        (job_id, title, company, location, salary_min, salary_max, avg_salary, date_posted)
+        (job_id, title, company, location, salary_min, salary_max, avg_salary, date_posted,
+         salary_currency, salary_period, qualifications)
     VALUES
-        (:job_id, :title, :company, :location, :salary_min, :salary_max, :avg_salary, :date_posted)
-    ON CONFLICT (job_id) DO NOTHING
+        (:job_id, :title, :company, :location, :salary_min, :salary_max, :avg_salary, :date_posted,
+         :salary_currency, :salary_period, :qualifications)
+    ON CONFLICT (job_id) DO UPDATE SET
+        salary_min = excluded.salary_min, salary_max = excluded.salary_max,
+        avg_salary = excluded.avg_salary, salary_currency = excluded.salary_currency,
+        salary_period = excluded.salary_period, qualifications = excluded.qualifications
 """)
 INSERT_SKILLS = text("""
-    INSERT INTO job_skills (job_id, skill) VALUES (:job_id, :skill)
-    ON CONFLICT (job_id, skill) DO NOTHING
+    INSERT INTO job_skills (job_id, skill, skill_kind) VALUES (:job_id, :skill, 'skill')
+    ON CONFLICT (job_id, skill) DO UPDATE SET skill_kind = 'skill'
 """)
 
 
@@ -30,8 +35,9 @@ def _records(frame, columns):
 def save_jobs(jobs: pd.DataFrame, skills: pd.DataFrame, *, engine=None) -> None:
     """Save jobs then skills in one transaction against the existing schema.
 
-    Repeated batches are safe: existing jobs remain unchanged and duplicate
-    skill pairs are ignored. New skills may be added to existing jobs. All
+    Repeated batches are safe: salary metadata and qualifications are refreshed,
+    other existing job fields are preserved, and extracted skills are replaced
+    for the batch. Legacy qualification rows remain separately labeled. All
     skills must refer to a job in this batch. Database errors propagate after
     rollback. This function never creates tables or commits partial batches.
     """
@@ -52,5 +58,7 @@ def save_jobs(jobs: pd.DataFrame, skills: pd.DataFrame, *, engine=None) -> None:
     target = engine if engine is not None else get_db_engine()
     with target.begin() as connection:
         connection.execute(INSERT_JOBS, job_rows)
+        connection.execute(text("DELETE FROM job_skills WHERE job_id = :job_id AND skill_kind = 'skill'"),
+                           [{"job_id": job_id} for job_id in ids])
         if skill_rows:
             connection.execute(INSERT_SKILLS, skill_rows)

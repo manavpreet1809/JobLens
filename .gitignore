@@ -53,6 +53,7 @@ coverage.xml
 *.sql
 # Track the application schema while keeping SQL dumps ignored.
 !db/schema.sql
+!db/migrations/001_data_quality.sql
 *.sql.gz
 *.sql.bz2
 *.sql.xz

@@ -13,8 +13,7 @@ def load_analytics(*, title="", company="", start_date=None, end_date=None, engi
 
     Text filters are literal, case-insensitive substrings. Date filters exclude
     undated postings. Rankings are capped at 10 and 15 rows respectively. Salary
-    summaries report coverage only: original currencies and pay periods are
-    unavailable, so aggregating their amounts would be misleading.
+    summaries group by known currency and period only. No conversion occurs.
     """
     clauses, params = [], {}
     for name, value in (("title", title), ("company", company)):
@@ -48,9 +47,17 @@ def load_analytics(*, title="", company="", start_date=None, end_date=None, engi
             ORDER BY jobs DESC, company LIMIT 10""",
         "skills": f"""SELECT js.skill, COUNT(DISTINCT j.job_id) AS jobs
             FROM jobs j JOIN job_skills js ON js.job_id = j.job_id
-            WHERE {where} GROUP BY js.skill ORDER BY jobs DESC, js.skill LIMIT 15""",
+            WHERE {where} AND js.skill_kind = 'skill'
+            GROUP BY js.skill ORDER BY jobs DESC, js.skill LIMIT 15""",
+        "salaries": f"""SELECT j.salary_currency, j.salary_period, COUNT(*) AS jobs,
+            AVG(j.avg_salary) AS mean_midpoint FROM jobs j
+            WHERE {where} AND j.avg_salary IS NOT NULL
+              AND j.salary_currency IS NOT NULL AND j.salary_period IS NOT NULL
+            GROUP BY j.salary_currency, j.salary_period
+            ORDER BY j.salary_currency, j.salary_period""",
         "listings": f"""SELECT j.job_id, j.title, j.company, j.location,
-            j.date_posted, j.salary_min, j.salary_max, j.avg_salary
+            j.date_posted, j.salary_min, j.salary_max, j.avg_salary,
+            j.salary_currency, j.salary_period, j.qualifications
             FROM jobs j WHERE {where}
             ORDER BY j.date_posted DESC NULLS LAST, j.job_id LIMIT 200""",
     }

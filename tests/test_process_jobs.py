@@ -1,6 +1,7 @@
 """Synthetic transformation tests with no external services."""
 
 import copy
+import json
 import unittest
 from datetime import date
 
@@ -31,6 +32,7 @@ class TransformationTests(unittest.TestCase):
             "job_id": "example", "title": "Developer", "company": "Example",
             "location": "Edmonton", "salary_min": 80000, "salary_max": 100000,
             "avg_salary": 90000, "date_posted": date(2026, 1, 2),
+            "salary_currency": None, "salary_period": None, "qualifications": '["python", "sql"]',
         })
         self.assertEqual(skills.to_dict("records"), [
             {"job_id": "example", "skill": "python"},
@@ -44,21 +46,24 @@ class TransformationTests(unittest.TestCase):
             record("high", job_min_salary=None, job_max_salary="20"),
             record("zero", job_min_salary=0, job_max_salary=None),
         ])
-        self.assertEqual(jobs.salary_min.tolist(), [12.5, 20, 0])
-        self.assertEqual(jobs.salary_max.tolist(), [12.5, 20, 0])
+        self.assertEqual(jobs.iloc[0].salary_min, 12.5)
+        self.assertTrue(pd.isna(jobs.iloc[0].salary_max))
+        self.assertTrue(pd.isna(jobs.iloc[1].salary_min))
+        self.assertEqual(jobs.iloc[1].salary_max, 20)
         self.assertEqual(jobs.avg_salary.tolist(), [12.5, 20, 0])
 
-    def test_unusable_salaries_are_excluded(self):
+    def test_unusable_salaries_do_not_exclude_jobs(self):
         for value in (None, "unknown", float("nan"), float("inf"), -5, True, [], {}):
             with self.subTest(value=value):
                 jobs, skills = transform_jobs([record(job_min_salary=value, job_max_salary=None)])
-                self.assertTrue(jobs.empty)
-                self.assertTrue(skills.empty)
+                self.assertEqual(len(jobs), 1)
+                self.assertTrue(pd.isna(jobs.iloc[0].avg_salary))
         jobs, _ = transform_jobs([record(job_min_salary=100, job_max_salary=10)])
-        self.assertTrue(jobs.empty)
+        self.assertEqual(len(jobs), 1)
+        self.assertTrue(pd.isna(jobs.iloc[0].avg_salary))
 
     def test_missing_fields_and_empty_input(self):
-        for records in ([], [{}], [{"job_id": "no-salary"}]):
+        for records in ([], [{}]):
             jobs, skills = transform_jobs(records)
             self.assertTrue(jobs.empty)
             self.assertTrue(skills.empty)
@@ -72,13 +77,13 @@ class TransformationTests(unittest.TestCase):
     def test_ids_are_required_and_duplicates_keep_first_valid_record(self):
         jobs, skills = transform_jobs([
             record(None), record(" "), record(1),
-            record("same", job_min_salary=None, job_max_salary=None),
+            record("other", job_min_salary=None, job_max_salary=None),
             record(" same ", job_title="First valid"),
             record("same", job_title="Later", job_highlights={"Qualifications": ["Rust"]}),
         ])
-        self.assertEqual(jobs.job_id.tolist(), ["same"])
-        self.assertEqual(jobs.title.tolist(), ["First valid"])
-        self.assertEqual(skills.skill.tolist(), ["python", "sql"])
+        self.assertEqual(jobs.job_id.tolist(), ["other", "same"])
+        self.assertEqual(jobs.title.tolist(), ["Developer", "First valid"])
+        self.assertEqual(skills.skill.tolist(), ["python", "sql", "python", "sql"])
         self.assertTrue(set(skills.job_id).issubset(set(jobs.job_id)))
 
     def test_dates_are_utc_and_invalid_dates_are_null(self):
@@ -102,6 +107,17 @@ class TransformationTests(unittest.TestCase):
             {"job_id": "string", "skill": "scikit-learn"},
             {"job_id": "list", "skill": "machine learning"},
         ])
+
+    def test_currency_period_and_qualification_extraction(self):
+        jobs, skills = transform_jobs([record(
+            job_min_salary=None, job_max_salary=None, job_salary_currency="cad",
+            job_salary_period="hour", job_highlights={"Qualifications": [
+                "3 years of Python and PostgreSQL experience", "Communication skills", "JavaScript"]})])
+        self.assertEqual(jobs.iloc[0].salary_currency, "CAD")
+        self.assertEqual(jobs.iloc[0].salary_period, "HOUR")
+        self.assertEqual(len(json.loads(jobs.iloc[0].qualifications)), 3)
+        self.assertEqual(skills.skill.tolist(), ["javascript", "postgresql", "python"])
+        self.assertTrue(pd.isna(jobs.iloc[0].avg_salary))
 
     def test_invalid_input_is_rejected(self):
         for value in (None, {}, "jobs", [None], ["job"]):

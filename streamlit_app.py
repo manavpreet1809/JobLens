@@ -47,7 +47,7 @@ def main():
         st.info("No postings match this view. Broaden the filters, or load job data to get started.")
         return
 
-    overview, qualifications, listings = st.tabs(["Market overview", "Qualifications", "Job listings"])
+    overview, qualifications, listings = st.tabs(["Market overview", "Skills", "Job listings"])
     with overview:
         left, right = st.columns([3, 2])
         with left:
@@ -73,15 +73,19 @@ def main():
         st.divider()
         st.subheader("Salary coverage")
         st.write(f"{int(summary['salary_records']):,} of {total:,} postings have a stored salary value.")
-        st.caption("Currency and pay period are not retained. Amounts may mix hourly, monthly, and annual pay, so market averages and salary comparisons are not shown.")
+        st.caption("Amounts are compared only within the same currency and pay period. No currency conversion or annualization is applied. Unknown units are excluded from this summary.")
+        if not data["salaries"].empty:
+            st.dataframe(data["salaries"].rename(columns={"salary_currency": "Currency",
+                "salary_period": "Period", "jobs": "Postings", "mean_midpoint": "Mean reported midpoint"}),
+                hide_index=True, width="stretch")
 
     with qualifications:
-        st.subheader("Frequently requested qualifications")
-        st.caption("Top 15 entries by distinct postings. Entries can be full qualification phrases, not just technology names.")
+        st.subheader("Frequently mentioned skills")
+        st.caption("Top 15 skills explicitly matched in qualification text using a limited vocabulary. Unmatched qualifications remain in the listings.")
         if data["skills"].empty:
-            st.info("No qualifications are available for this view.")
+            st.info("No extracted skills are available for this view.")
         else:
-            st.dataframe(data["skills"].rename(columns={"skill": "Qualification", "jobs": "Postings"}),
+            st.dataframe(data["skills"].rename(columns={"skill": "Skill", "jobs": "Postings"}),
                          hide_index=True, width="stretch")
 
     with listings:
@@ -91,6 +95,7 @@ def main():
             "job_id": "Job ID", "title": "Title", "company": "Company", "location": "Location",
             "date_posted": "Posted", "salary_min": "Salary low (raw)",
             "salary_max": "Salary high (raw)", "avg_salary": "Salary midpoint (raw)",
+            "salary_currency": "Currency", "salary_period": "Pay period", "qualifications": "Qualifications (JSON)",
         }), hide_index=True, width="stretch")
 
 

@@ -16,6 +16,7 @@ APP = Path(__file__).resolve().parents[1] / "streamlit_app.py"
 def sample():
     return {
         "summary": pd.DataFrame([dict(jobs=2, companies=1, salary_records=2, dated_records=2)]),
+        "salaries": pd.DataFrame(),
         "trend": pd.DataFrame([dict(date_posted="2026-01-01", jobs=2)]),
         "companies": pd.DataFrame([dict(company="Example", jobs=2)]),
         "skills": pd.DataFrame([dict(skill="python", jobs=2)]),

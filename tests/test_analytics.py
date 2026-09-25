@@ -26,7 +26,7 @@ class AnalyticsTests(unittest.TestCase):
                 dict(id="b", title="Data Engineer", company="Acme", date="2026-01-02", salary=90000),
                 dict(id="c", title="100%_Engineer", company=None, date=None, salary=None),
             ])
-            conn.execute(text("INSERT INTO job_skills VALUES (:id,:skill)"), [
+            conn.execute(text("INSERT INTO job_skills (job_id,skill) VALUES (:id,:skill)"), [
                 dict(id="a", skill="python"), dict(id="a", skill="sql"),
                 dict(id="b", skill="python"),
             ])
@@ -58,6 +58,16 @@ class AnalyticsTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 load_analytics(start_date=date(2026,2,1), end_date=date(2026,1,1))
             factory.assert_not_called()
+
+    def test_salary_groups_and_legacy_qualifications_are_separate(self):
+        with self.engine.begin() as conn:
+            conn.execute(text("UPDATE jobs SET salary_currency='CAD', salary_period='HOUR' WHERE job_id='a'"))
+            conn.execute(text("UPDATE jobs SET salary_currency='USD', salary_period='YEAR' WHERE job_id='b'"))
+            conn.execute(text("INSERT INTO job_skills VALUES ('a','excellent communication','qualification')"))
+        data = load_analytics(engine=self.engine)
+        self.assertEqual(data["salaries"].jobs.tolist(), [1, 1])
+        self.assertEqual(data["salaries"].mean_midpoint.tolist(), [30, 90000])
+        self.assertNotIn("excellent communication", data["skills"].skill.tolist())
 
     def test_empty_database(self):
         with self.engine.begin() as conn:

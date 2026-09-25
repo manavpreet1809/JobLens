@@ -83,6 +83,20 @@ class PersistenceTests(unittest.TestCase):
         self.assertEqual(self.rows("SELECT count(*) FROM jobs"), [(1,)])
         self.assertEqual(self.rows("SELECT count(*) FROM job_skills"), [(0,)])
 
+    def test_reprocessing_refreshes_metadata_and_extracted_skills(self):
+        save_jobs(self.jobs, self.skills, engine=self.engine)
+        with self.engine.begin() as conn:
+            conn.execute(text("INSERT INTO job_skills VALUES ('example','communication','qualification')"))
+        jobs, skills = transform_jobs([{
+            "job_id": "example", "job_min_salary": 50, "job_salary_currency": "CAD",
+            "job_salary_period": "HOUR", "job_highlights": {"Qualifications": ["Docker"]},
+        }])
+        save_jobs(jobs, skills, engine=self.engine)
+        self.assertEqual(self.rows("SELECT salary_currency, salary_period, avg_salary FROM jobs"),
+                         [("CAD", "HOUR", 50)])
+        self.assertEqual(self.rows("SELECT skill FROM job_skills WHERE skill_kind='skill'"), [("docker",)])
+        self.assertEqual(self.rows("SELECT skill FROM job_skills WHERE skill_kind='qualification'"), [("communication",)])
+
 
 if __name__ == "__main__":
     unittest.main()
