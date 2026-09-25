@@ -13,3 +13,5 @@ must already contain the tables in `db/schema.sql`; the dashboard does not inges
 
 See [local setup](docs/local-setup.md) for Docker Compose and
 [data quality](docs/data-quality.md) for salary/skill behavior and schema migration.
+See [integration validation](docs/integration-validation.md) for PostgreSQL tests
+and the explicitly enabled live smoke run.

@@ -6,6 +6,8 @@
 !src/*.py
 !tests/
 !tests/*.py
+!scripts/
+!scripts/*.py
 !db/
 !db/schema.sql
 !db/migrations/

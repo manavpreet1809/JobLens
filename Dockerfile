@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
 COPY --chown=talentscope:talentscope src/ ./src/
 COPY --chown=talentscope:talentscope db/ ./db/
 COPY --chown=talentscope:talentscope tests/ ./tests/
+COPY --chown=talentscope:talentscope scripts/ ./scripts/
 COPY --chown=talentscope:talentscope .streamlit/config.toml ./.streamlit/config.toml
 COPY --chown=talentscope:talentscope streamlit_app.py ./
 USER talentscope
