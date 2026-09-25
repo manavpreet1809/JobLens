@@ -9,6 +9,39 @@ from src.analytics import load_analytics
 
 def main():
     st.set_page_config(page_title="TalentScope | Job market analytics", page_icon="◈", layout="wide")
+    # Keep the reading area comfortable on laptop screens; retain native scrolling.
+    st.html("""
+        <style>
+        [data-testid="stMainBlockContainer"] {
+            max-width: 1240px;
+            padding: 5rem 2.5rem 3rem;
+        }
+        [data-testid="stMain"] h1 {
+            font-size: clamp(1.8rem, 2.5vw, 2.5rem);
+            line-height: 1.2;
+            letter-spacing: -0.025em;
+            padding-top: 0.25rem;
+        }
+        [data-testid="stSidebarUserContent"] { padding-top: 3rem; }
+        [data-testid="stMetric"] {
+            background: #1C2721;
+            border: 1px solid #34483B;
+            border-radius: 12px;
+            padding: 1rem 1.1rem;
+        }
+        [data-testid="stMetricValue"] { font-size: 2rem; }
+        [data-testid="stMetricLabel"] { font-size: 0.85rem; }
+        [data-testid="stTabs"] { margin-top: 0.75rem; }
+        @media (max-width: 1100px) {
+            [data-testid="stMainBlockContainer"] { padding-inline: 1.5rem; }
+            [data-testid="stMetric"] { padding: 0.75rem; }
+            [data-testid="stMetricValue"] { font-size: 1.7rem; }
+        }
+        @media (max-width: 640px) {
+            [data-testid="stMainBlockContainer"] { padding: 4rem 1rem 2rem; }
+        }
+        </style>
+    """)
     st.caption("TALENTSCOPE / MARKET INTELLIGENCE")
     st.title("A clearer view of the job market.")
     st.write("Explore hiring activity, employers, and the qualifications appearing in stored job postings.")
