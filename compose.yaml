@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: talentscope
+      POSTGRES_USER: talentscope
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD locally; never commit it}
+    ports:
+      - "127.0.0.1:${DB_LOCAL_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U talentscope -d talentscope"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  dashboard:
+    build: .
+    ports:
+      - "127.0.0.1:${DASHBOARD_PORT:-8501}:8501"
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: talentscope
+      DB_USER: talentscope
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD locally; never commit it}
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  postgres_data:

@@ -1,0 +1,15 @@
+# Allow only the files explicitly needed by the application image.
+**
+!requirements.txt
+!Dockerfile
+!src/
+!src/*.py
+!tests/
+!tests/*.py
+!db/
+!db/schema.sql
+!db/migrations/
+!db/migrations/001_data_quality.sql
+!.streamlit/
+!.streamlit/config.toml
+!streamlit_app.py
