@@ -1,17 +1,22 @@
 # TalentScope
 
-A job market analytics platform for exploring hiring trends and understanding demand for roles and skills.
+A dashboard for exploring job postings, employers, salaries, and skills.
 
-Planned technologies: Python, JSearch through RapidAPI, pandas, AWS S3, AWS Secrets Manager, AWS Lambda, PostgreSQL, SQLAlchemy, Streamlit, Altair, and Docker.
+**Built with:** Python, pandas, PostgreSQL, AWS S3, Streamlit, and Docker.
 
-Development is in progress.
+![Dashboard with fictional demo data](docs/images/dashboard.png)
 
-Run the read-only dashboard from the repository root with `streamlit run streamlit_app.py`
-after installing `requirements.txt` and configuring `DB_HOST`, `DB_NAME`, `DB_USER`,
-and `DB_PASSWORD` in your environment (`DB_PORT` defaults to `5432`). The database
-must already contain the tables in `db/schema.sql`; the dashboard does not ingest data.
+## Run locally
 
-See [local setup](docs/local-setup.md) for Docker Compose and
-[data quality](docs/data-quality.md) for salary/skill behavior and schema migration.
-See [integration validation](docs/integration-validation.md) for PostgreSQL tests
-and the explicitly enabled live smoke run.
+With Docker installed, set a local database password and start the app:
+
+```sh
+export DB_PASSWORD="$(openssl rand -hex 24)"
+docker compose up --build -d --wait
+```
+
+Open [localhost:8501](http://localhost:8501). Keep the same password when reusing
+the database. A fresh database starts with an empty dashboard.
+
+The local pipeline has been tested; live API/AWS validation is pending.
+See [setup](docs/local-setup.md) and [testing](docs/integration-validation.md) for details.
