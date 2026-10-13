@@ -1,8 +1,6 @@
 # TalentScope
 
-A job-market dashboard for comparing hiring activity, employers, salaries, and skills.
-
-![TalentScope dashboard with fictional demo postings](docs/images/dashboard.png)
+TalentScope turns job postings into a searchable view of hiring activity, salary ranges, and demand for technical skills. It brings API ingestion, data processing, and a PostgreSQL-backed dashboard into one pipeline.
 
 ## Data pipeline
 
@@ -19,6 +17,6 @@ export DB_PASSWORD="$(openssl rand -hex 24)"
 docker compose up --build -d --wait
 ```
 
-Open [localhost:8501](http://localhost:8501). Keep the same password when reusing the database. A new database is empty; the screenshot uses fictional demo postings.
+Open [localhost:8501](http://localhost:8501). Keep the same password when reusing the database. A new database starts empty.
 
 See [local setup](docs/local-setup.md) for loading data and configuration. [Integration checks](docs/integration-validation.md) describe testing; live API/AWS validation is still pending.
