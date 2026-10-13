@@ -36,22 +36,23 @@ def main():
         <style>
         [data-testid="stMainBlockContainer"] {
             max-width: 1240px;
-            padding: 5rem 2.5rem 3rem;
+            padding: 3.5rem 1.5rem 2rem;
         }
         [data-testid="stMain"] h1 {
-            font-size: clamp(1.8rem, 2.5vw, 2.5rem);
+            font-size: clamp(1.6rem, 2vw, 2rem);
             line-height: 1.2;
             letter-spacing: -0.025em;
             padding-top: 0.25rem;
         }
+        [data-testid="stMain"] h3 { font-size: 1.2rem; }
         [data-testid="stSidebarUserContent"] { padding-top: 3rem; }
         [data-testid="stMetric"] {
             background: #FFFFFF;
             border: 1px solid #D6D1C6;
             border-radius: 4px;
-            padding: 1rem 1.1rem;
+            padding: 0.5rem 0.75rem;
         }
-        [data-testid="stMetricValue"] { font-size: 2rem; }
+        [data-testid="stMetricValue"] { font-size: 1.6rem; }
         [data-testid="stMetricLabel"] { font-size: 0.85rem; }
         [data-testid="stTabs"] { margin-top: 0.75rem; }
         @media (max-width: 1100px) {
@@ -65,7 +66,7 @@ def main():
         </style>
     """)
     st.title("TalentScope")
-    st.write("Job postings collected from JSearch, broken down by date, employer, salary and skills.")
+    st.write("Explore job postings, employers, salaries, and skills.")
 
     with st.sidebar:
         st.header("Filters")
@@ -113,7 +114,7 @@ def main():
                     x=alt.X("date_posted:T", title="Posted date"),
                     y=alt.Y("jobs:Q", title="Postings", axis=alt.Axis(tickMinStep=1)),
                     tooltip=[alt.Tooltip("date_posted:T", title="Date"), alt.Tooltip("jobs:Q", title="Postings")],
-                ).properties(height=300)
+                ).properties(height=220)
                 st.altair_chart(chart, use_container_width=True)
         with right:
             st.subheader("Top employers")
@@ -121,7 +122,7 @@ def main():
             chart = alt.Chart(data["companies"]).mark_bar(color=ACCENT).encode(
                 x=alt.X("jobs:Q", title="Postings", axis=alt.Axis(tickMinStep=1)),
                 y=alt.Y("company:N", sort="-x", title=None), tooltip=["company", "jobs"],
-            ).properties(height=300)
+            ).properties(height=220)
             st.altair_chart(chart, use_container_width=True)
         st.divider()
         st.subheader("Salaries")

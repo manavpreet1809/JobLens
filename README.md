@@ -1,39 +1,24 @@
 # TalentScope
 
-A dashboard for exploring job postings, employers, salaries, and skills.
+A job-market dashboard for comparing hiring activity, employers, salaries, and skills.
 
-**Built with:** Python, pandas, PostgreSQL, AWS S3, Streamlit, and Docker.
+![TalentScope dashboard with fictional demo postings](docs/images/dashboard.png)
 
-## Preview
+## Data pipeline
 
-The screenshot uses fictional demo postings.
+JSearch → S3 raw JSON → pandas → PostgreSQL → Streamlit.
 
-![Dashboard with fictional demo data](docs/images/dashboard.png)
+Filters narrow results by role, employer, and date. Salary comparisons keep currencies and pay periods separate. Skill counts come from a defined technology vocabulary. Raw pages can be reprocessed without duplicating jobs.
 
-## Explore the job market
+## Run
 
-- **Hiring activity:** filter postings by role, employer, and date, then explore trends and leading companies.
-- **Salary comparisons:** group amounts by currency and pay period instead of mixing hourly and annual figures.
-- **Skill mentions:** extract a defined set of technologies from qualification text.
-
-## From job listings to charts
-
-JSearch API → S3 raw JSON → pandas processing → PostgreSQL → Streamlit dashboard.
-Raw pages can be processed again without duplicating job records.
-
-## Open the dashboard
-
-With Docker installed, set a local database password and start the app:
+Requires Docker. Set a local database password, then start the services:
 
 ```sh
 export DB_PASSWORD="$(openssl rand -hex 24)"
 docker compose up --build -d --wait
 ```
 
-Open [localhost:8501](http://localhost:8501). Keep the same password when reusing
-the database. A fresh database starts with an empty dashboard.
+Open [localhost:8501](http://localhost:8501). Keep the same password when reusing the database. A new database is empty; the screenshot uses fictional demo postings.
 
-## What is verified
-
-The local pipeline has been tested; live API/AWS validation is pending.
-See [setup](docs/local-setup.md) and [testing](docs/integration-validation.md) for details.
+See [local setup](docs/local-setup.md) for loading data and configuration. [Integration checks](docs/integration-validation.md) describe testing; live API/AWS validation is still pending.
