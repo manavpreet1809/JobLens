@@ -1,19 +1,21 @@
-# Charcoal surfaces, forest-green controls, and warm neutral chart accents.
+# Off-white page, dark text, and an ochre accent. No blues.
 # Appearance only. Keep credentials in environment variables or secrets.toml.
 [theme]
-base = "dark"
-primaryColor = "#2F7D52"
-backgroundColor = "#101714"
-secondaryBackgroundColor = "#1C2721"
-textColor = "#EEF2EC"
-linkColor = "#8BC9A0"
+base = "light"
+primaryColor = "#8A5A12"
+backgroundColor = "#F6F4EF"
+secondaryBackgroundColor = "#ECE8DF"
+textColor = "#23211D"
+linkColor = "#6B4510"
 font = "sans serif"
-borderColor = "#465B4D"
+headingFont = "serif"
+headingFontWeights = [600, 600, 600, 600, 600, 600]
+borderColor = "#D6D1C6"
 baseRadius = "small"
 showWidgetBorder = true
 showSidebarBorder = true
-chartCategoricalColors = ["#80BC92", "#D1AD66", "#85A9B8", "#C98764", "#BAC5B5", "#A4AC6B"]
+chartCategoricalColors = ["#8A5A12", "#3D3A34", "#6B7A2C", "#A8492A", "#B8A98A", "#5E4B3C"]
 
 [theme.sidebar]
-backgroundColor = "#151E19"
-secondaryBackgroundColor = "#24332A"
+backgroundColor = "#EFECE5"
+secondaryBackgroundColor = "#E4DFD4"

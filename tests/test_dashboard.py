@@ -65,3 +65,29 @@ class DashboardTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DisplayFormattingTests(unittest.TestCase):
+    def test_qualifications_and_periods_are_readable(self):
+        from streamlit_app import readable_period, readable_qualifications
+        self.assertEqual(readable_qualifications('["Python and SQL", "3 years of experience"]'),
+                         "Python and SQL; 3 years of experience")
+        self.assertEqual(readable_qualifications("not json"), "not json")
+        self.assertEqual(readable_qualifications(None), "")
+        self.assertEqual(readable_period("YEAR"), "Per year")
+        self.assertEqual(readable_period("FORTNIGHT"), "FORTNIGHT")
+
+    def test_listings_show_plain_qualifications_and_salary_table_is_rounded(self):
+        data = sample()
+        data["listings"]["salary_period"] = "HOUR"
+        data["listings"]["qualifications"] = '["Python and SQL"]'
+        data["salaries"] = pd.DataFrame([dict(salary_currency="CAD", salary_period="YEAR", jobs=2,
+                                              mean_midpoint=103019.2308)])
+        with patch("src.analytics.load_analytics", return_value=data):
+            app = AppTest.from_file(APP).run()
+        self.assertFalse(app.exception)
+        salaries, listings = app.dataframe[0].value, app.dataframe[-1].value
+        self.assertEqual(salaries.loc[0, "Pay period"], "Per year")
+        self.assertEqual(salaries.loc[0, "Average salary (midpoint)"], 103019.23)
+        self.assertEqual(listings.loc[0, "Qualifications"], "Python and SQL")
+        self.assertEqual(listings.loc[0, "Pay period"], "Per hour")

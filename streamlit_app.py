@@ -1,14 +1,36 @@
 """TalentScope's read-only analytics dashboard. Run from the repository root."""
 
+import json
+
 import altair as alt
+import pandas as pd
 import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.analytics import load_analytics
 
+ACCENT = "#8A5A12"
+PERIODS = {"HOUR": "Per hour", "DAY": "Per day", "WEEK": "Per week", "MONTH": "Per month", "YEAR": "Per year"}
+MONEY = st.column_config.NumberColumn(format="localized")
+
+
+def readable_qualifications(value):
+    """Stored qualifications are a JSON list; show them as plain text."""
+    if not isinstance(value, str) or not value.strip():
+        return ""
+    try:
+        entries = json.loads(value)
+    except ValueError:
+        return value
+    return "; ".join(str(entry) for entry in entries) if isinstance(entries, list) else str(entries)
+
+
+def readable_period(value):
+    return PERIODS.get(value, value) if isinstance(value, str) else value
+
 
 def main():
-    st.set_page_config(page_title="TalentScope | Job market analytics", page_icon="◈", layout="wide")
+    st.set_page_config(page_title="TalentScope", layout="wide")
     # Keep the reading area comfortable on laptop screens; retain native scrolling.
     st.html("""
         <style>
@@ -24,9 +46,9 @@ def main():
         }
         [data-testid="stSidebarUserContent"] { padding-top: 3rem; }
         [data-testid="stMetric"] {
-            background: #1C2721;
-            border: 1px solid #34483B;
-            border-radius: 12px;
+            background: #FFFFFF;
+            border: 1px solid #D6D1C6;
+            border-radius: 4px;
             padding: 1rem 1.1rem;
         }
         [data-testid="stMetricValue"] { font-size: 2rem; }
@@ -42,29 +64,27 @@ def main():
         }
         </style>
     """)
-    st.caption("TALENTSCOPE / MARKET INTELLIGENCE")
-    st.title("A clearer view of the job market.")
-    st.write("Explore hiring activity, employers, and the qualifications appearing in stored job postings.")
+    st.title("TalentScope")
+    st.write("Job postings collected from JSearch, broken down by date, employer, salary and skills.")
 
     with st.sidebar:
-        st.title("TalentScope")
-        st.caption("Focus your view")
+        st.header("Filters")
         with st.form("filters"):
             title = st.text_input("Job title", placeholder="e.g. Data engineer")
             company = st.text_input("Company", placeholder="Any employer")
             start = st.date_input("Posted from", value=None)
             end = st.date_input("Posted through", value=None)
             st.form_submit_button("Apply filters", type="primary", width="stretch")
-        st.caption("Leave dates blank to include undated postings. Apply filters again to refresh.")
+        st.caption("Leave the dates empty to include postings without a date.")
 
     if start and end and start > end:
         st.warning("Choose an end date on or after the start date.")
         return
     try:
-        with st.spinner("Loading market data…"):
+        with st.spinner("Loading postings…"):
             data = load_analytics(title=title, company=company, start_date=start, end_date=end)
     except (ValueError, SQLAlchemyError):
-        st.error("Market data is unavailable. Check the database configuration and connection, then try again.")
+        st.error("The data is unavailable. Check the database settings and connection, then try again.")
         return
 
     summary = data["summary"].iloc[0]
@@ -75,46 +95,51 @@ def main():
             (total, int(summary["companies"]), int(summary["salary_records"]), int(summary["dated_records"]))):
         with column:
             st.metric(label, f"{value:,}")
-    st.caption("This dataset includes only postings retained by the ingestion pipeline; it is not a complete market census.")
+    st.caption("Only the postings this project has collected, not every job on the market.")
     if total == 0:
-        st.info("No postings match this view. Broaden the filters, or load job data to get started.")
+        st.info("No postings match these filters. Try widening them, or load some job data first.")
         return
 
-    overview, qualifications, listings = st.tabs(["Market overview", "Skills", "Job listings"])
+    overview, qualifications, listings = st.tabs(["Overview", "Skills", "Job listings"])
     with overview:
         left, right = st.columns([3, 2])
         with left:
             st.subheader("Posting activity")
-            st.caption("Stored postings by date · undated records excluded")
+            st.caption("Postings per day (postings without a date are left out)")
             if data["trend"].empty:
                 st.info("No posting dates are available for this view.")
             else:
-                chart = alt.Chart(data["trend"]).mark_line(point=True, color="#80BC92").encode(
+                chart = alt.Chart(data["trend"]).mark_line(point=True, color=ACCENT).encode(
                     x=alt.X("date_posted:T", title="Posted date"),
                     y=alt.Y("jobs:Q", title="Postings", axis=alt.Axis(tickMinStep=1)),
                     tooltip=[alt.Tooltip("date_posted:T", title="Date"), alt.Tooltip("jobs:Q", title="Postings")],
                 ).properties(height=300)
                 st.altair_chart(chart, use_container_width=True)
         with right:
-            st.subheader("Leading employers")
-            st.caption("Top 10 by stored postings")
-            chart = alt.Chart(data["companies"]).mark_bar(color="#80BC92", cornerRadiusEnd=3).encode(
+            st.subheader("Top employers")
+            st.caption("The 10 companies with the most postings")
+            chart = alt.Chart(data["companies"]).mark_bar(color=ACCENT).encode(
                 x=alt.X("jobs:Q", title="Postings", axis=alt.Axis(tickMinStep=1)),
                 y=alt.Y("company:N", sort="-x", title=None), tooltip=["company", "jobs"],
             ).properties(height=300)
             st.altair_chart(chart, use_container_width=True)
         st.divider()
-        st.subheader("Salary coverage")
-        st.write(f"{int(summary['salary_records']):,} of {total:,} postings have a stored salary value.")
-        st.caption("Amounts are compared only within the same currency and pay period. No currency conversion or annualization is applied. Unknown units are excluded from this summary.")
+        st.subheader("Salaries")
+        st.write(f"{int(summary['salary_records']):,} of {total:,} postings list a salary.")
+        st.caption("Averages are only taken within the same currency and pay period. Amounts are not converted "
+                   "between currencies or from hourly to yearly. Postings with an unknown currency or period are left out.")
         if not data["salaries"].empty:
-            st.dataframe(data["salaries"].rename(columns={"salary_currency": "Currency",
-                "salary_period": "Period", "jobs": "Postings", "mean_midpoint": "Mean reported midpoint"}),
-                hide_index=True, width="stretch")
+            salaries = data["salaries"].assign(
+                salary_period=data["salaries"]["salary_period"].map(readable_period),
+                mean_midpoint=pd.to_numeric(data["salaries"]["mean_midpoint"]).round(2))
+            st.dataframe(salaries.rename(columns={"salary_currency": "Currency",
+                "salary_period": "Pay period", "jobs": "Postings", "mean_midpoint": "Average salary (midpoint)"}),
+                hide_index=True, width="stretch", column_config={"Average salary (midpoint)": MONEY})
 
     with qualifications:
-        st.subheader("Frequently mentioned skills")
-        st.caption("Top 15 skills explicitly matched in qualification text using a limited vocabulary. Unmatched qualifications remain in the listings.")
+        st.subheader("Most mentioned skills")
+        st.caption("The 15 skills that come up most in the qualifications. Only skills from a fixed list are counted; "
+                   "everything else is still shown in the job listings.")
         if data["skills"].empty:
             st.info("No extracted skills are available for this view.")
         else:
@@ -122,14 +147,20 @@ def main():
                          hide_index=True, width="stretch")
 
     with listings:
-        st.subheader("Explore the postings")
-        st.caption("Up to 200 matches, newest dated postings first. Salary amounts are unconverted source values.")
-        st.dataframe(data["listings"].rename(columns={
+        st.subheader("Job listings")
+        st.caption("Up to 200 postings, newest first. Salaries are shown as posted, in their own currency.")
+        listings = data["listings"].copy()
+        if "salary_period" in listings:
+            listings["salary_period"] = listings["salary_period"].map(readable_period)
+        if "qualifications" in listings:
+            listings["qualifications"] = listings["qualifications"].map(readable_qualifications)
+        st.dataframe(listings.rename(columns={
             "job_id": "Job ID", "title": "Title", "company": "Company", "location": "Location",
-            "date_posted": "Posted", "salary_min": "Salary low (raw)",
-            "salary_max": "Salary high (raw)", "avg_salary": "Salary midpoint (raw)",
-            "salary_currency": "Currency", "salary_period": "Pay period", "qualifications": "Qualifications (JSON)",
-        }), hide_index=True, width="stretch")
+            "date_posted": "Posted", "salary_min": "Salary low", "salary_max": "Salary high",
+            "avg_salary": "Salary midpoint", "salary_currency": "Currency", "salary_period": "Pay period",
+            "qualifications": "Qualifications",
+        }), hide_index=True, width="stretch",
+            column_config={name: MONEY for name in ("Salary low", "Salary high", "Salary midpoint")})
 
 
 if __name__ == "__main__":
