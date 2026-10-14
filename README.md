@@ -1,6 +1,6 @@
-# TalentScope
+# JobLens: Job Market Analytics
 
-TalentScope turns job postings into a searchable view of hiring activity, salary ranges, and demand for technical skills. It brings API ingestion, data processing, and a PostgreSQL-backed dashboard into one pipeline.
+JobLens turns job postings into a searchable view of hiring activity, salary ranges, and demand for technical skills. It brings API ingestion, data processing, and a PostgreSQL-backed dashboard into one pipeline.
 
 ## Data pipeline
 
